@@ -41,7 +41,7 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.5"
+const version = "1.0.6"
 
 func showBanner(noColor bool) {
 	banner := `
@@ -970,6 +970,30 @@ func main() {
         // Show banner (unless silent/json)
         if !quiet && !jsonOut {
                 showBanner(noColor)
+        }
+
+        // Check if Chrome is installed if headless is enabled
+        if headless {
+                chromePath := ""
+                browsers := []string{"google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome"}
+                if runtime.GOOS == "darwin" {
+                        browsers = append(browsers, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+                }
+                for _, name := range browsers {
+                        if path, err := exec.LookPath(name); err == nil {
+                                chromePath = path
+                                break
+                        }
+                }
+                
+                if chromePath == "" {
+                        if verbose || !quiet {
+                                fmt.Fprintln(os.Stderr, "WARNING: Headless mode requested but Chrome/Chromium not found in $PATH. Disabling headless mode.")
+                        }
+                        headless = false
+                } else if verbose {
+                        fmt.Fprintf(os.Stderr, "INFO Using Chrome at %s for headless mode\n", chromePath)
+                }
         }
 
         wClient, err := wappalyzer.New()
