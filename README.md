@@ -83,6 +83,16 @@ Data files (`favicon_hashes.csv`, `title_patterns.csv`) are **automatically down
 wappscan -update
 ```
 
+### Headless Mode (Optional)
+
+If you need `-headless` capabilities (WAF bypass, JS rendering) on **Kali Linux / WSL**:
+
+```bash
+sudo apt update && sudo apt install -y chromium
+```
+
+With `v1.0.6+`, wappscan will automatically disable headless mode (and warn you) if Chrome is missing, so installation is optional.
+
 ---
 
 ## Usage
