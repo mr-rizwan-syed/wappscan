@@ -44,10 +44,14 @@ jobs:
             BINARY_NAME=wappscan.exe
           fi
           go build -ldflags="-s -w" -o $BINARY_NAME .
+          # Create raw binary with specific name for self-updater
+          cp $BINARY_NAME wappscan_${GOOS}_${GOARCH}
           tar -czvf wappscan_${GOOS}_${GOARCH}.tar.gz $BINARY_NAME
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: wappscan_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz
+          files: |
+            wappscan_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz
+            wappscan_${{ matrix.goos }}_${{ matrix.goarch }}
