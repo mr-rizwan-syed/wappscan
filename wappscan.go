@@ -41,18 +41,25 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.0"
+const version = "1.0.1"
 
 func showBanner(noColor bool) {
-        if noColor {
-                fmt.Fprintf(os.Stderr, "wappscan v%s - Web Technology Fingerprinting Tool\n\n", version)
-                return
-        }
-        fmt.Fprintf(os.Stderr, "%s%swappscan%s v%s - %sWeb Technology Fingerprinting Tool%s\n\n",
-                BOLD, CYAN, RESET, version, YELLOW, RESET)
+	banner := `
+   _      __
+  | | /| / /___ _ ___  ___  ___ ____ ___ _ ___ 
+  | |/ |/ // _ '// _ \/ _ \/ _-</ __// _ '// _ \
+  |__/|__/ \_,_// .__/ .__/\__/\__/ \_,_//_//_/
+               /_/  /_/                        
+`
+	if noColor {
+		fmt.Fprint(os.Stderr, banner)
+		fmt.Fprintf(os.Stderr, "               v%s | @mr-rizwan-syed\n\n", version)
+		return
+	}
+	fmt.Fprintf(os.Stderr, "%s%s%s", CYAN, banner, RESET)
+	fmt.Fprintf(os.Stderr, "               %sv%s%s | %s@mr-rizwan-syed%s\n\n",
+		BOLD, version, RESET, YELLOW, RESET)
 }
-
-// selfUpdate downloads the latest wappscan binary from GitHub releases.
 func selfUpdate() error {
         goos := runtime.GOOS
         goarch := runtime.GOARCH
@@ -883,19 +890,17 @@ func main() {
         var singleURL string
         var listFile string
         var concurrency int
-        var insecure bool
         var jsonOut bool
         var timeoutSec int
         var retries int
         var verbose bool
-        var quiet bool
+        var silent bool
         var outputFile string
         var showVersion bool
         var doUpdate bool
         var proxyURL string
         var rateLimit int
         var noColor bool
-        var silent bool
 
         var uaCustom string
         var uaFile string
@@ -903,13 +908,11 @@ func main() {
         flag.StringVar(&singleURL, "u", "", "single target URL/domain (example: test.com or https://test.com)")
         flag.StringVar(&listFile, "l", "", "file containing list of domains/subdomains")
         flag.IntVar(&concurrency, "c", 20, "concurrency level")
-        flag.BoolVar(&insecure, "k", true, "skip TLS certificate verification (default: true)")
         flag.BoolVar(&jsonOut, "json", false, "output JSON in webanalyze-like format")
         flag.IntVar(&timeoutSec, "t", 25, "timeout in seconds")
         flag.IntVar(&retries, "r", 1, "retries for temporary errors/timeouts")
         flag.BoolVar(&verbose, "v", false, "verbose mode (prints errors/debug)")
-        flag.BoolVar(&quiet, "q", false, "quiet mode (no stdout output)")
-        flag.BoolVar(&silent, "silent", false, "silent mode (same as -q)")
+        flag.BoolVar(&silent, "silent", false, "silent mode (no banner, no stdout)")
         flag.StringVar(&outputFile, "o", "", "output file to save results")
         flag.BoolVar(&showVersion, "version", false, "show version and exit")
         flag.BoolVar(&doUpdate, "update", false, "update wappscan to latest version")
@@ -931,11 +934,10 @@ func main() {
         
 
 
-        var jsFetch bool
+        jsFetch := true
         var jsMax int
         var jsSize int
         var headless bool
-        flag.BoolVar(&jsFetch, "js-fetch", true, "fetch JS files for improved tech detection (default: true)")
         flag.IntVar(&jsMax, "js-max", 5, "max JS files to fetch per target")
         flag.IntVar(&jsSize, "js-size", 204800, "max bytes to fetch per JS file (default: 200KB)")
         flag.BoolVar(&headless, "headless", false, "use Headless Chrome to bypass WAFs/JS-checks (requires Chrome installed)")
@@ -957,12 +959,10 @@ func main() {
                 return
         }
 
-        // -silent is alias for -q
-        if silent {
-                quiet = true
-        }
+        // -silent combines quiet behavior
+        quiet := silent
 
-        // Show banner (unless quiet/json)
+        // Show banner (unless silent/json)
         if !quiet && !jsonOut {
                 showBanner(noColor)
         }
@@ -973,6 +973,7 @@ func main() {
                 return
         }
 
+        insecure := true
         transport := &http.Transport{
                 TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
                 DialContext: (&net.Dialer{
@@ -1135,7 +1136,7 @@ func main() {
                         colorLine = plainLine
                 } else {
                         colorLine = fmt.Sprintf("%s%s%s - %s[%s]%s",
-                                BLUE, url, RESET,
+                                CYAN, url, RESET,
                                 GREEN, strings.Join(techList, ", "), RESET,
                         )
                 }
