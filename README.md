@@ -109,20 +109,34 @@ cat urls.txt | wappscan
 # JSON output (webanalyze-compatible)
 wappscan -u https://example.com -json
 
+# Scan a list with 50 concurrent threads
+cat subdomains.txt | wappscan -c 50
+
 # Through a proxy (Burp Suite)
 wappscan -u https://example.com -proxy http://127.0.0.1:8080
+- Route traffic through Home Residential Proxies, gives better results
 
 # Rate-limited scanning (10 req/s)
 wappscan -l urls.txt -rate-limit 10
 
 # Headless Chrome mode for JS-heavy sites
-wappscan -u https://spa-app.com -headless
+wappscan -u https://spa-app.com -headless -c 2
+
+# Headless with low threads and longer timeout
+cat urls.txt | wappscan -headless -c 2 -t 45
 
 # Verbose + output to file
 wappscan -l urls.txt -v -o results.txt
 
 # No color output (for piping)
 wappscan -l urls.txt -no-color
+
+# Silent mode + JSON output (no banner, just data)
+cat urls.txt | wappscan -json -silent -o results.json
+
+# Debugging Connectivity
+wappscan -u https://problematic-site.com -v
+
 ```
 
 ---
@@ -334,13 +348,8 @@ We ❤️ contributions! Help us make Wappscan better:
 3.  **Improve Detection**: Suggest new ways to detect technologies (headers, cookies, etc.).
 
 ### Improvement Ideas 💡
-*   [ ] Integration with Nuclei templates for vulnerability scanning
 *   [ ] Automated technology crawling and hash generation
 *   [ ] Docker container support
 *   [ ] Community-driven signature database updates
 
 ---
-
-## License
-
-MIT License. See [LICENSE](../LICENSE) file.
