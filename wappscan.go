@@ -41,7 +41,7 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.6"
+const version = "1.0.7"
 
 func showBanner(noColor bool) {
 	banner := `
@@ -1427,9 +1427,22 @@ func main() {
 
                 // Headless Mode
                 if headless {
-                        allocCtx, allocCancel := chromedp.NewContext(context.Background())
+                        opts := append(chromedp.DefaultExecAllocatorOptions[:],
+                                chromedp.Flag("headless", true), // headless=new is better but true is safer compat
+                                chromedp.Flag("disable-gpu", true),
+                                chromedp.Flag("no-sandbox", true),
+                                chromedp.Flag("disable-dev-shm-usage", true),
+                                chromedp.Flag("ignore-certificate-errors", true),
+                        )
+
+                        allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
                         defer allocCancel()
-                        ctx, cancel := context.WithTimeout(allocCtx, time.Duration(timeoutSec)*time.Second)
+
+                        ctx, cancel := chromedp.NewContext(allocCtx)
+                        defer cancel()
+
+                        // Add timeout
+                        ctx, cancel = context.WithTimeout(ctx, time.Duration(timeoutSec)*time.Second)
                         defer cancel()
 
                         var finalURL string
