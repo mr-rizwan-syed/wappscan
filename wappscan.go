@@ -41,7 +41,7 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.7"
+const version = "1.0.8"
 
 func showBanner(noColor bool) {
 	banner := `
@@ -1428,10 +1428,12 @@ func main() {
                 // Headless Mode
                 if headless {
                         opts := append(chromedp.DefaultExecAllocatorOptions[:],
-                                chromedp.Flag("headless", true), // headless=new is better but true is safer compat
+                                chromedp.Flag("headless", true), // true is safer compat than "new"
                                 chromedp.Flag("disable-gpu", true),
                                 chromedp.Flag("no-sandbox", true),
+                                chromedp.Flag("disable-setuid-sandbox", true),
                                 chromedp.Flag("disable-dev-shm-usage", true),
+                                chromedp.Flag("disable-software-rasterizer", true),
                                 chromedp.Flag("ignore-certificate-errors", true),
                         )
 
@@ -1459,7 +1461,13 @@ func main() {
                         )
 
                         if err != nil {
-                                printError(target, err)
+// Downgraded to WARNING because fallback detection continues
+if verbose {
+mu.Lock()
+fmt.Fprintf(os.Stderr, "WARNING %s => Headless failed (fallback to standard): %v\n", target, err)
+mu.Unlock()
+}
+
                                 // Fallback to normal execution continues below
                         } else {
                                 // Success - fingerprint and return
