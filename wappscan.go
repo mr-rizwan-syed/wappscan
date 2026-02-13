@@ -16,7 +16,9 @@ import (
         "net/http/cookiejar"
         "net/url"
         "os"
+        "os/exec"
         "path/filepath"
+        "runtime"
         "regexp"
         "sort"
         "strconv"
@@ -35,7 +37,78 @@ const (
         BLUE   = "\033[34m"
         YELLOW = "\033[33m"
         RESET  = "\033[0m"
+        BOLD   = "\033[1m"
+        CYAN   = "\033[36m"
 )
+
+const version = "1.0.0"
+
+func showBanner(noColor bool) {
+        if noColor {
+                fmt.Fprintf(os.Stderr, "wappscan v%s - Web Technology Fingerprinting Tool\n\n", version)
+                return
+        }
+        fmt.Fprintf(os.Stderr, "%s%swappscan%s v%s - %sWeb Technology Fingerprinting Tool%s\n\n",
+                BOLD, CYAN, RESET, version, YELLOW, RESET)
+}
+
+// selfUpdate downloads the latest wappscan binary from GitHub releases.
+func selfUpdate() error {
+        goos := runtime.GOOS
+        goarch := runtime.GOARCH
+
+        downloadURL := fmt.Sprintf(
+                "https://github.com/mr-rizwan-syed/wappscan/releases/latest/download/wappscan_%s_%s",
+                goos, goarch)
+
+        fmt.Fprintf(os.Stderr, "[*] Updating wappscan from %s\n", downloadURL)
+
+        resp, err := http.Get(downloadURL)
+        if err != nil {
+                return fmt.Errorf("download failed: %w", err)
+        }
+        defer resp.Body.Close()
+
+        if resp.StatusCode != 200 {
+                // Fallback: try go install
+                fmt.Fprintf(os.Stderr, "[*] Binary not found, trying go install...\n")
+                cmd := exec.Command("go", "install", "github.com/mr-rizwan-syed/wappscan@latest")
+                cmd.Stdout = os.Stdout
+                cmd.Stderr = os.Stderr
+                if err := cmd.Run(); err != nil {
+                        return fmt.Errorf("go install failed: %w", err)
+                }
+                fmt.Fprintf(os.Stderr, "[+] Updated successfully via go install\n")
+                return nil
+        }
+
+        exePath, err := os.Executable()
+        if err != nil {
+                return fmt.Errorf("cannot find executable path: %w", err)
+        }
+
+        tmpFile := exePath + ".tmp"
+        out, err := os.Create(tmpFile)
+        if err != nil {
+                return fmt.Errorf("cannot create temp file: %w", err)
+        }
+
+        _, err = io.Copy(out, resp.Body)
+        out.Close()
+        if err != nil {
+                os.Remove(tmpFile)
+                return fmt.Errorf("download incomplete: %w", err)
+        }
+
+        os.Chmod(tmpFile, 0755)
+        if err := os.Rename(tmpFile, exePath); err != nil {
+                os.Remove(tmpFile)
+                return fmt.Errorf("cannot replace binary: %w", err)
+        }
+
+        fmt.Fprintf(os.Stderr, "[+] Updated successfully to latest version\n")
+        return nil
+}
 
 type Match struct {
         AppName string `json:"app_name"`
@@ -817,6 +890,12 @@ func main() {
         var verbose bool
         var quiet bool
         var outputFile string
+        var showVersion bool
+        var doUpdate bool
+        var proxyURL string
+        var rateLimit int
+        var noColor bool
+        var silent bool
 
         var uaCustom string
         var uaFile string
@@ -830,7 +909,13 @@ func main() {
         flag.IntVar(&retries, "r", 1, "retries for temporary errors/timeouts")
         flag.BoolVar(&verbose, "v", false, "verbose mode (prints errors/debug)")
         flag.BoolVar(&quiet, "q", false, "quiet mode (no stdout output)")
+        flag.BoolVar(&silent, "silent", false, "silent mode (same as -q)")
         flag.StringVar(&outputFile, "o", "", "output file to save results")
+        flag.BoolVar(&showVersion, "version", false, "show version and exit")
+        flag.BoolVar(&doUpdate, "update", false, "update wappscan to latest version")
+        flag.StringVar(&proxyURL, "proxy", "", "HTTP/SOCKS5 proxy URL (e.g. http://127.0.0.1:8080)")
+        flag.IntVar(&rateLimit, "rate-limit", 0, "max requests per second (0 = unlimited)")
+        flag.BoolVar(&noColor, "no-color", false, "disable colored output")
 
         flag.StringVar(&uaCustom, "ua", "", "custom User-Agent (optional)")
         flag.StringVar(&uaFile, "ua-file", "user-agents.txt", "user-agent file path (default: user-agents.txt)")
@@ -857,6 +942,31 @@ func main() {
 
         flag.Parse()
 
+        // Handle -version
+        if showVersion {
+                fmt.Printf("wappscan v%s\n", version)
+                return
+        }
+
+        // Handle -update
+        if doUpdate {
+                if err := selfUpdate(); err != nil {
+                        fmt.Fprintf(os.Stderr, "Update failed: %v\n", err)
+                        os.Exit(1)
+                }
+                return
+        }
+
+        // -silent is alias for -q
+        if silent {
+                quiet = true
+        }
+
+        // Show banner (unless quiet/json)
+        if !quiet && !jsonOut {
+                showBanner(noColor)
+        }
+
         wClient, err := wappalyzer.New()
         if err != nil {
                 fmt.Println("Error initializing wappalyzer:", err)
@@ -868,6 +978,25 @@ func main() {
                 DialContext: (&net.Dialer{
                         Timeout: 10 * time.Second,
                 }).DialContext,
+        }
+
+        // Proxy support
+        if proxyURL != "" {
+                proxyParsed, err := url.Parse(proxyURL)
+                if err != nil {
+                        fmt.Fprintf(os.Stderr, "Invalid proxy URL: %v\n", err)
+                        os.Exit(1)
+                }
+                transport.Proxy = http.ProxyURL(proxyParsed)
+                if verbose {
+                        fmt.Fprintf(os.Stderr, "INFO Using proxy: %s\n", proxyURL)
+                }
+        }
+
+        // Rate limiter
+        var rateLimiter <-chan time.Time
+        if rateLimit > 0 {
+                rateLimiter = time.Tick(time.Second / time.Duration(rateLimit))
         }
 
 
@@ -1001,10 +1130,15 @@ func main() {
                 sort.Strings(techList)
 
                 plainLine := fmt.Sprintf("%s - [%s]", url, strings.Join(techList, ", "))
-                colorLine := fmt.Sprintf("%s%s%s - %s[%s]%s",
-                        BLUE, url, RESET,
-                        GREEN, strings.Join(techList, ", "), RESET,
-                )
+                colorLine := ""
+                if noColor {
+                        colorLine = plainLine
+                } else {
+                        colorLine = fmt.Sprintf("%s%s%s - %s[%s]%s",
+                                BLUE, url, RESET,
+                                GREEN, strings.Join(techList, ", "), RESET,
+                        )
+                }
 
                 writeStdout(colorLine)
                 writeFile(plainLine)
@@ -1343,6 +1477,9 @@ func main() {
         }
 
         queueTarget := func(line string) {
+                if rateLimiter != nil {
+                        <-rateLimiter
+                }
                 wg.Add(1)
                 sem <- struct{}{}
                 go processTarget(line)

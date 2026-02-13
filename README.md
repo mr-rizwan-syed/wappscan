@@ -1,31 +1,73 @@
-# wappscan
+<p align="center">
+  <h1 align="center">wappscan</h1>
+  <p align="center">Fast, in-process web technology fingerprinting tool written in Go</p>
+</p>
 
-A fast, in-process web technology fingerprinting tool written in Go. Identifies technologies, frameworks, CDNs, and server software by analyzing HTTP headers, HTML content, JavaScript files, cookies, meta tags, favicons, and inline scripts.
+<p align="center">
+  <a href="#installation">Install</a> •
+  <a href="#features">Features</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#why-wappscan">Why Wappscan</a>
+</p>
+
+---
+
+## Why Wappscan?
+
+Most technology fingerprinting tools rely on a **single detection method** — typically just HTTP headers and HTML body analysis. `wappscan` goes much further by combining **8 distinct detection techniques** into a single tool, providing significantly richer results than any individual method.
+
+### Comparison with Other Tools
+
+| Feature | wappscan | httpx -td | webanalyze | whatweb |
+|---|:---:|:---:|:---:|:---:|
+| Header + Body fingerprinting | ✅ | ✅ | ✅ | ✅ |
+| Cookie-based detection | ✅ | ❌ | ❌ | ✅ |
+| Favicon hash matching | ✅ | ✅ | ❌ | ❌ |
+| Page title pattern matching | ✅ | ❌ | ❌ | ❌ |
+| Inline script analysis | ✅ | ❌ | ❌ | ❌ |
+| External JS file inspection | ✅ | ❌ | ❌ | ❌ |
+| Meta tag parsing | ✅ | ❌ | ❌ | ✅ |
+| Error page signatures | ✅ | ❌ | ❌ | ❌ |
+| Wayback Machine fallback | ✅ | ❌ | ❌ | ❌ |
+| Headless Chrome mode | ✅ | ❌ | ❌ | ❌ |
+| In-process (no subprocess) | ✅ | N/A | ✅ | ✅ |
+| Proxy support | ✅ | ✅ | ❌ | ✅ |
+| Self-update | ✅ | ✅ | ❌ | ❌ |
+| JSON output | ✅ | ✅ | ✅ | ✅ |
+
+### Combining with httpx -td
+
+`wappscan` is designed to be used alongside `httpx -td` for **maximum coverage**. Each tool detects technologies the other misses:
+
+```bash
+# Full pipeline: subdomain discovery → HTTP probe → deep fingerprinting
+subfinder -d target.com | httpx -o urls.txt
+cat urls.txt | wappscan -json -o wappscan_results.json
+
+# Or combine httpx tech detection with wappscan for maximum coverage
+echo "https://target.com" | httpx -td -json | jq -r '.url' | wappscan
+```
+
+**Why both?** `httpx -td` uses Wappalyzer signatures on headers+body (fast, lightweight), while `wappscan` adds cookie analysis, JS file inspection, favicon hashing, error page detection, title pattern matching, and Wayback Machine fallback. Together they provide the most comprehensive technology fingerprint available.
+
+---
 
 ## Features
 
-- **Multi-source detection**: Headers, body, cookies, meta tags, inline scripts, favicon hashes, title patterns
-- **In-process favicon hashing**: No external `httpx` dependency — uses murmur3 hashing directly
+- **8-source detection pipeline**: Headers, body, cookies, meta tags, inline scripts, external JS, favicon hashes, title patterns
+- **In-process favicon hashing**: No external dependencies — uses murmur3 hashing directly
 - **JavaScript analysis**: Fetches and inspects external JS files for framework signatures
-- **Wayback Machine fallback**: Falls back to archived versions for minimal or error pages
-- **Headless Chrome**: Optional headless browser mode for JS-heavy / WAF-protected sites
+- **Wayback Machine fallback**: Falls back to archived versions for blocked/minimal pages
+- **Headless Chrome**: Optional browser mode for JS-rendered / WAF-protected sites
+- **Proxy support**: HTTP/SOCKS5 proxy for all requests
+- **Self-update**: Update to latest version with `-update`
+- **Rate limiting**: Control request rate with `-rate-limit`
 - **Concurrent scanning**: Process multiple targets simultaneously
-- **Auto-download data files**: Downloads `favicon_hashes.csv` and `title_patterns.csv` from GitHub to `~/.config/wappscan/` on first run
-- **Multiple output formats**: Plaintext and JSON (`webanalyze`-compatible)
+- **Auto-download data files**: Downloads databases to `~/.config/wappscan/` on first run
+- **Multiple output formats**: Plaintext (colored) and JSON (`webanalyze`-compatible)
 
-## Dependencies
-
-| Dependency | Purpose |
-|---|---|
-| [wappalyzergo](https://github.com/projectdiscovery/wappalyzergo) | Core technology fingerprinting engine |
-| [chromedp](https://github.com/chromedp/chromedp) | Headless Chrome for JS-rendered pages |
-| [murmur3](https://github.com/spaolacci/murmur3) | Favicon hash computation |
-
-### Optional Runtime Dependencies
-
-| Tool | Required For |
-|---|---|
-| Google Chrome / Chromium | `-headless` flag only |
+---
 
 ## Installation
 
@@ -34,6 +76,14 @@ go install github.com/mr-rizwan-syed/wappscan@latest
 ```
 
 Data files (`favicon_hashes.csv`, `title_patterns.csv`) are **automatically downloaded** to `~/.config/wappscan/` on first run.
+
+### Update
+
+```bash
+wappscan -update
+```
+
+---
 
 ## Usage
 
@@ -44,18 +94,121 @@ wappscan -u https://example.com
 # Multiple targets from file
 wappscan -l urls.txt
 
-# Pipe from stdin
+# Pipeline from stdin
 cat urls.txt | wappscan
 
-# JSON output
+# JSON output (webanalyze-compatible)
 wappscan -u https://example.com -json
 
-# Verbose + headless + output to file
-wappscan -l urls.txt -headless -v -o results.txt
+# Through a proxy (Burp Suite)
+wappscan -u https://example.com -proxy http://127.0.0.1:8080
 
-# With concurrency control
-wappscan -l urls.txt -c 50 -t 30
+# Rate-limited scanning (10 req/s)
+wappscan -l urls.txt -rate-limit 10
+
+# Headless Chrome mode for JS-heavy sites
+wappscan -u https://spa-app.com -headless
+
+# Verbose + output to file
+wappscan -l urls.txt -v -o results.txt
+
+# No color output (for piping)
+wappscan -l urls.txt -no-color
 ```
+
+---
+
+## How It Works
+
+`wappscan` runs a **multi-stage detection pipeline** for every target. Each stage independently identifies technologies, and results are merged for comprehensive coverage.
+
+### Detection Pipeline
+
+```
+Target URL
+    │
+    ▼
+┌─────────────────────────────────┐
+│ 1. HTTP Request (with retries)  │──→ Response Headers + Body
+└─────────────┬───────────────────┘
+              │
+    ┌─────────┼───────────────────────────────┐
+    │         │         Parallel Detection     │
+    │         ▼                                │
+    │  ┌─────────────┐  ┌──────────────────┐  │
+    │  │ 2. Cookies  │  │ 3. Meta Tags     │  │
+    │  │   Detection │  │    (generator)   │  │
+    │  └─────────────┘  └──────────────────┘  │
+    │         ▼                                │
+    │  ┌─────────────┐  ┌──────────────────┐  │
+    │  │ 4. Inline   │  │ 5. Title Pattern │  │
+    │  │   Scripts   │  │    Matching      │  │
+    │  └─────────────┘  └──────────────────┘  │
+    │         ▼                                │
+    │  ┌─────────────┐  ┌──────────────────┐  │
+    │  │ 6. Favicon  │  │ 7. Error Page    │  │
+    │  │   Hash      │  │    Signatures    │  │
+    │  └─────────────┘  └──────────────────┘  │
+    │         ▼                                │
+    │  ┌─────────────────────────────────────┐ │
+    │  │ 8. External JS Fetch + Analysis     │ │
+    │  │    (parallel, up to 5 files)        │ │
+    │  └─────────────────────────────────────┘ │
+    │         ▼                                │
+    │  ┌─────────────────────────────────────┐ │
+    │  │ 9. Wappalyzer Fingerprint           │ │
+    │  │    (headers + body + JS content)    │ │
+    │  └─────────────────────────────────────┘ │
+    └──────────┬──────────────────────────────┘
+               │
+               ▼
+    ┌──────────────────────┐
+    │ Fallback: Wayback    │ ← Only if blocked/minimal/error
+    │ Machine Archive      │
+    └──────────────────────┘
+               │
+               ▼
+         Merged Results
+```
+
+### Detection Methods in Detail
+
+| # | Method | What It Detects | Example |
+|---|---|---|---|
+| 1 | **Cookie Analysis** | Server frameworks by cookie names | `PHPSESSID` → PHP, `laravel_session` → Laravel |
+| 2 | **Meta Tags** | CMS/generators from `<meta>` tags | `<meta name="generator" content="WordPress">` |
+| 3 | **Inline Scripts** | JS frameworks from `<script>` content | `__NEXT_DATA__` → Next.js + React |
+| 4 | **Title Patterns** | Products by page title keywords | "Zimbra" → Zimbra, "GitLab" → GitLab |
+| 5 | **Favicon Hash** | Products by favicon mmh3 hash | Hash `116323821` → Jira |
+| 6 | **Error Pages** | Servers from error page signatures | "Microsoft-IIS" in headers → IIS |
+| 7 | **External JS** | Libraries from JS file content | jQuery, React, Angular signatures |
+| 8 | **Wappalyzer** | 2500+ technologies via signature DB | Comprehensive header + body patterns |
+
+### Fallback Mechanism
+
+When the primary scan produces **blocked, minimal, or error results**, `wappscan` automatically falls back to the **Wayback Machine**:
+
+```
+Primary Scan Failed?
+    │
+    ├── HTTP 403+ response          → Wayback fallback
+    ├── No response (timeout)       → Wayback fallback
+    ├── Block page detected         → Wayback fallback
+    │   (title contains: forbidden,
+    │    cloudflare, waf, denied)
+    ├── Tiny response (<300 bytes)  → Wayback fallback
+    │   + few detections (≤1)
+    └── Normal response             → Use primary results
+```
+
+**Why is this useful?**
+
+- **WAF-protected sites**: Cloudflare, Akamai, etc. often block automated tools. The Wayback cache preserves the original technology stack
+- **Rate-limited targets**: When you get 429/503 responses, archived versions still provide detection
+- **Decommissioned services**: Subdomains that now return errors may have cached technology data
+- **Bug bounty**: Identify technologies behind WAFs without active exploitation
+
+---
 
 ## Flags
 
@@ -68,16 +221,97 @@ wappscan -l urls.txt -c 50 -t 30
 | `-r` | `1` | Retries for temporary errors |
 | `-json` | `false` | JSON output (webanalyze-compatible) |
 | `-o` | | Output file path |
-| `-q` | `false` | Quiet mode |
+| `-q` / `-silent` | `false` | Quiet/silent mode |
 | `-v` | `false` | Verbose/debug mode |
+| `-no-color` | `false` | Disable colored output |
+| `-proxy` | | HTTP/SOCKS5 proxy URL |
+| `-rate-limit` | `0` | Max requests/sec (0=unlimited) |
+| `-update` | | Update to latest version |
+| `-version` | | Show version |
 | `-headless` | `false` | Use Headless Chrome |
 | `-js-fetch` | `true` | Fetch external JS files |
 | `-js-max` | `5` | Max JS files per target |
 | `-js-size` | `204800` | Max bytes per JS file |
 | `-k` | `true` | Skip TLS verification |
 | `-ua` | | Custom User-Agent |
-| `-favicon-db` | `~/.config/wappscan/favicon_hashes.csv` | Favicon hash DB |
-| `-title-db` | `~/.config/wappscan/title_patterns.csv` | Title patterns DB |
+| `-favicon-db` | `~/.config/wappscan/...` | Favicon hash DB |
+| `-title-db` | `~/.config/wappscan/...` | Title patterns DB |
+
+---
+
+## Use Cases
+
+### Bug Bounty Recon
+```bash
+# Full subdomain → tech stack pipeline
+subfinder -d target.com | httpx -o live.txt
+cat live.txt | wappscan -json -o techs.json
+
+# Filter for specific technologies (e.g., WordPress targets)
+cat techs.json | jq -r 'select(.matches[].app_name == "WordPress") | .hostname'
+```
+
+### Penetration Testing
+```bash
+# Route through Burp Suite for manual testing
+wappscan -u https://target.com -proxy http://127.0.0.1:8080 -v
+
+# Headless mode for WAF-protected apps
+wappscan -l targets.txt -headless -o results.txt
+```
+
+### Asset Inventory
+```bash
+# Rate-limited scan of large asset lists
+wappscan -l all_assets.txt -c 50 -rate-limit 20 -json -o inventory.json
+```
+
+### CI/CD Security Checks
+```bash
+# Silent mode with JSON for automated processing
+echo "https://staging.company.com" | wappscan -silent -json | \
+  jq -r '.matches[].app_name' | sort -u
+```
+
+---
+
+## Test Suite
+
+The test suite contains **80+ test cases** covering all pure functions:
+
+| Test | Coverage |
+|---|---|
+| `TestNormalizeInput` | URL normalization (scheme prefix, trimming) |
+| `TestParseTechVersion` | Technology version parsing |
+| `TestIsTemporaryErr` | Network error classification |
+| `TestMergeTechs` | Technology map merging |
+| `TestExtractScriptSrcs` | `<script src>` extraction from HTML |
+| `TestResolveURL` | Relative URL resolution |
+| `TestExtractTitle` | `<title>` tag extraction |
+| `TestDetectFromTitle` | Title-based technology detection |
+| `TestDetectFromCookies` | Cookie-based framework detection |
+| `TestExtractMetaTechs` | Meta tag technology extraction |
+| `TestDetectFromErrorPage` | Error page signature matching |
+| `TestDetectFromInlineScripts` | Inline JS framework detection |
+| `TestStripWaybackPrefix` | Wayback URL prefix removal |
+| `TestExtractOriginalScriptSrcs` | Original URLs from Wayback pages |
+| `TestPickRandomUA` | User-Agent rotation |
+| `TestFetchFaviconHash` | In-process favicon hashing (httptest) |
+| `TestFetchPartialJS` | Partial JS fetch (httptest) |
+| `TestTryRequest` | HTTP client with retries (httptest) |
+| `TestFetchJSContent` | Full JS content assembly (httptest) |
+| `TestLoadTitlePatterns` | CSV title pattern loading |
+| `TestLoadFaviconHashes` | CSV favicon hash loading |
+| `TestLoadUserAgents` | User-Agent file loading |
+| `TestDetectFromCookiesConcurrency` | Concurrent cookie detection safety |
+| Regression: Title-as-tech | Page titles not injected as technologies |
+| Regression: Connection reuse | No `Connection: close` header |
+
+```bash
+go test -v ./...
+```
+
+---
 
 ## Data Files
 
@@ -86,66 +320,49 @@ Stored in `~/.config/wappscan/` (auto-downloaded from GitHub on first run):
 - **`favicon_hashes.csv`** — Maps favicon mmh3 hashes to technology names
 - **`title_patterns.csv`** — Maps page title patterns to technology names
 
+---
+
 ## Example Output
 
+**Plaintext:**
 ```
-https://example.com - [Apache, Bootstrap, Google Analytics, jQuery, PHP, WordPress]
+wappscan v1.0.0 - Web Technology Fingerprinting Tool
+
+https://www.example.com - [Apache, Bootstrap, Google Analytics, jQuery, PHP, WordPress]
 ```
 
+**JSON:**
 ```json
-{"hostname":"https://example.com","matches":[{"app_name":"Apache","version":"2.4.41"},{"app_name":"PHP","version":"7.4"}]}
+{"hostname":"https://www.example.com","matches":[{"app_name":"Apache","version":"2.4.41"},{"app_name":"PHP","version":"7.4"},{"app_name":"WordPress","version":""}]}
 ```
 
 ---
 
 ## Publishing to GitHub
 
-### 1. Create a new GitHub repository
-
-Go to [github.com/new](https://github.com/new) and create a repo named `wappscan`.
-
-### 2. Initialize and push
-
 ```bash
-cd /path/to/chomtesh/core/wappscan
-
-# Initialize git repo
-git init
-git branch -M main
-
-# Add remote
-git remote add origin https://github.com/mr-rizwan-syed/wappscan.git
-
-# Add all files
-git add wappscan.go wappscan_test.go go.mod go.sum favicon_hashes.csv title_patterns.csv README.md .gitignore
-
-# Commit and push
-git commit -m "Initial release: wappscan - web technology fingerprinting tool"
-git push -u origin main
-```
-
-### 3. Create a release tag (for `go install`)
-
-```bash
+cd wappscan/
+git add -A
+git commit -m "Release v1.0.0"
+git push origin main
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-### 4. Users can now install via
-
+Users install via:
 ```bash
 go install github.com/mr-rizwan-syed/wappscan@latest
 ```
 
-### 5. Keep data files in the repo root
+---
 
-The CSV files (`favicon_hashes.csv`, `title_patterns.csv`) **must stay in the repo root** — the auto-download logic fetches them from `raw.githubusercontent.com/mr-rizwan-syed/wappscan/main/`.
+## Dependencies
 
-## Running Tests
-
-```bash
-go test -v ./...
-```
+| Package | Purpose |
+|---|---|
+| [wappalyzergo](https://github.com/projectdiscovery/wappalyzergo) | Core technology fingerprinting (2500+ signatures) |
+| [chromedp](https://github.com/chromedp/chromedp) | Headless Chrome for JS-rendered pages |
+| [murmur3](https://github.com/spaolacci/murmur3) | Favicon hash computation |
 
 ## License
 
