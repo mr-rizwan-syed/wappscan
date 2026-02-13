@@ -1,0 +1,473 @@
+Technology,Pattern1,Pattern2...
+Grafana
+Jenkins
+GitLab
+Apache,Index of /
+Nginx,Welcome to nginx
+Microsoft IIS,IIS Windows Server, IIS
+Tomcat,Apache Tomcat,Tomcat
+phpMyAdmin
+WordPress
+Joomla
+Drupal
+Hacked,Hacked by
+Outlook Web App
+Roundcube
+Splunk
+Kibana
+Zabbix
+Plesk
+cPanel,cPanel,WHM,cpanel WHM
+Webmin
+pfSense
+OPNsense
+Synology
+QNap
+F5 BIG-IP
+Citrix
+VMware vCenter,VMware ESXi,vCenter
+Proxmox
+Traefik
+Kubernetes
+OpenShift
+Rancher
+Argo CD
+Nexus Repository Manager,Sonatype Nexus
+JFrog Artifactory,Artifactory
+RabbitMQ
+Solr
+Elasticsearch
+ELK Stack,ELK
+Logstash
+Metabase
+Redash
+Superset
+Apache Airflow,Airflow
+Apache Nifi,Nifi
+Hadoop
+Spark
+Kafka
+Presto
+Trino
+MinIO
+Consul
+Vault
+Nomad
+Terraform
+Ansible
+SaltStack
+Chef
+Puppet
+Nagios
+Icinga
+Prometheus
+Alertmanager
+Sentry
+New Relic
+Datadog
+Dynatrace
+AppDynamics
+Graylog
+Fluentd
+Filebeat
+Metricbeat
+Packetbeat
+Auditbeat
+Heartbeat
+Functionbeat
+Journalbeat
+Winlogbeat
+AWS
+Azure
+Google Cloud,GCP
+DigitalOcean
+Linode
+Vultr
+Hetzner
+OVH
+Scaleway
+Alibaba Cloud
+Tencent Cloud
+Baidu Cloud
+Huawei Cloud
+IBM Cloud
+Oracle Cloud
+Salesforce
+Heroku
+Netlify
+Vercel
+Render
+Fly.io
+Railway
+Supabase
+PlanetScale
+Neon
+CockroachDB
+TiDB
+YugabyteDB
+ScyllaDB
+Cassandra
+HBase
+MongoDB
+Redis
+Memcached
+PostgreSQL
+MySQL
+MariaDB
+SQLite
+Oracle Database
+Microsoft SQL Server,SQL Server
+IBM Db2,Db2
+IBM Informix,Informix
+Sybase
+Teradata
+Snowflake
+BigQuery
+Redshift
+Azure Synapse Analytics,Synapse
+Databricks
+Athena
+Glue
+EMR
+Kinesis
+DynamoDB
+Cosmos DB
+Firestore
+Firebase Realtime Database,Realtime Database
+Cloud Spanner
+Cloud Bigtable
+Cloud SQL
+Google Cloud Storage,Cloud Storage
+Amazon S3,S3
+Azure Blob Storage,Blob Storage
+Block Storage
+File Storage
+Object Storage
+CDN
+WAF
+DDoS Protection
+Load Balancer
+API Gateway
+Service Mesh
+Ingress Controller
+Sidecar
+Proxy
+Reverse Proxy
+Forward Proxy
+VPN
+Firewall
+IDS
+IPS
+SIEM
+SOAR
+EDR
+XDR
+NDR
+MDR
+IAM
+PAM
+SSO
+MFA
+2FA
+OTP
+SAML
+OIDC
+OAuth
+LDAP
+Active Directory
+Kerberos
+RADIUS
+TACACS+
+PKI
+Certificate Authority
+HSM
+KMS
+Secret Manager
+Keycloak
+Auth0
+Okta
+Ping Identity
+OneLogin
+Duo
+LastPass
+1Password
+Bitwarden
+Keepass
+Dashlane
+RoboForm
+Sticky Password
+Enpass
+NordPass
+Keeper
+LogMeOnce
+True Key
+Google Password Manager
+Apple Keychain
+Samsung Pass
+Firefox Lockwise
+Microsoft Authenticator
+Google Authenticator
+Authy
+YubiKey
+Titan Security Key
+Nitrokey
+SoloKey
+OnlyKey
+Trezor
+Ledger,Ledger Nano S,Ledger Nano X
+KeepKey
+BitBox,BitBox02
+Coldcard,Coldcard Mk3
+Opendime
+Shift Crypto
+Coinkite
+SatoshiLabs
+Portainer
+Caddy
+Cockpit
+Virtualmin
+DirectAdmin
+ISPConfig
+Ajenti
+VestaCP
+Froxlor
+Sentora
+ZPanel
+Kloxo
+HestiaCP
+CyberPanel
+CloudPanel
+aapanel
+TinyCP
+KeyHelp
+BlueOnyx
+Yunohost
+Sandstorm
+Cloudron
+CasaOS
+Umbrel
+Start9
+FreedomBox
+Home Assistant
+OpenHAB
+Domoticz
+Gladys
+Jeedom
+ioBroker
+Node-RED
+Loki
+Tempo
+Jaeger
+Kiali
+Flux
+Longhorn
+Harbor
+Ceph
+Rook
+OpenEBS
+TrueNAS
+FreeNAS
+Unraid
+OpenMediaVault
+XigmaNAS
+Rockstor
+Asustor
+TerraMaster
+Proxmox Backup Server
+Xen Orchestra,Xen
+oVirt
+OpenStack
+CloudStack
+Apache CloudStack
+OpenNebula
+Harvester
+Nutanix Prism,Nutanix
+Emby
+Plex
+Jellyfin
+Tautulli
+Ombi
+Radarr
+Sonarr
+Lidarr
+Readarr
+Prowlarr
+Bazarr
+Jackett
+Transmission
+Deluge
+rTorrent
+qBittorrent
+Sabnzbd
+NZBGet
+Pyload
+JDownloader
+FileBrowser
+Nextcloud
+Owncloud
+Seafile
+Pydio
+Syncthing
+Resilio Sync
+Duplicati
+UrBackup
+BorgBackup
+Restic
+Kopia
+Paperless-ngx
+Photoprism
+Immich
+Pi-hole
+AdGuard,AdGuard Home
+Technitium
+Blocky
+Unbound
+Bind
+CoreDNS
+Nginx Proxy Manager
+Nginx
+HAProxy
+Squid
+Varnish
+WireGuard
+Tailscale
+Headscale
+ZeroTier
+Netbird
+Firezone
+Pritunl
+Shadowsocks
+V2Ray
+Xray
+Trojan
+NaiveProxy
+Gitea
+Forgejo
+Bitbucket
+Drone
+Woodpecker
+TeamCity
+CircleCI
+Travis CI
+Bamboo
+Spinnaker
+Tekton
+Redmine
+Jira
+Confluence
+Wiki.js
+BookStack
+DokuWiki
+MediaWiki
+XWiki
+Trilium
+Joplin
+Obsidian
+Logseq
+Roam Research
+Ghost
+Strapi
+Directus
+Appwrite
+PocketBase
+NocoDB
+Baserow
+Budibase
+Tooljet
+Appsmith
+Lowan
+Retool
+n8n
+ClaudBot
+MoltBot
+SwaggerHomepage
+Dashy
+Heimdall
+Organizr
+Flame
+SUI
+Vaultwarden
+Uptime Kuma
+Statping
+Cachet
+VS Code Server
+Coder
+Theia
+Mattermost
+Rocket.Chat
+Element
+Zulip
+SearXNG
+Whoogle
+Plausible
+Umami
+Matomo
+Moodle
+Canvas LMS
+OpenEdX
+BigBlueButton
+Jitsi Meet
+Etherpad
+HedgeDoc
+Vikunja
+TaskBoard
+Kanboard
+Restyaboard
+Wekan
+Taiga
+Leantime
+OpenProject
+InvoiceNinja
+Crater
+akaunting
+Dolibarr
+Odoo
+ERPNext
+EspoCRM
+SuiteCRM
+Vtiger
+Mautic
+Listmonk
+Postal
+Mailcow
+Modoboa
+Roundcube
+RainLoop
+SnappyMail
+Cypht
+Afterlogic
+Lovebeat
+Healthchecks
+Cabot
+Vagrant
+Packer
+consul
+vault
+nomad
+terraform
+packer
+waypoint
+boundary
+Zimbra
+SquirrelMail
+Horde
+Atmail
+SmarterMail
+Axigen
+iRedMail
+Mailu
+EBox
+Zentyal
+Kopano
+Grommunio
+SOGo
+Citadel
+Crossbox
+IceWarp
+MDaemon
+Kerio Connect
+Zoho Mail
+Fastmail
+ProtonMail
+Tutanota
+Exim
