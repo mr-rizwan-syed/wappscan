@@ -273,46 +273,6 @@ echo "https://staging.company.com" | wappscan -silent -json | \
   jq -r '.matches[].app_name' | sort -u
 ```
 
----
-
-## Test Suite
-
-The test suite contains **80+ test cases** covering all pure functions:
-
-| Test | Coverage |
-|---|---|
-| `TestNormalizeInput` | URL normalization (scheme prefix, trimming) |
-| `TestParseTechVersion` | Technology version parsing |
-| `TestIsTemporaryErr` | Network error classification |
-| `TestMergeTechs` | Technology map merging |
-| `TestExtractScriptSrcs` | `<script src>` extraction from HTML |
-| `TestResolveURL` | Relative URL resolution |
-| `TestExtractTitle` | `<title>` tag extraction |
-| `TestDetectFromTitle` | Title-based technology detection |
-| `TestDetectFromCookies` | Cookie-based framework detection |
-| `TestExtractMetaTechs` | Meta tag technology extraction |
-| `TestDetectFromErrorPage` | Error page signature matching |
-| `TestDetectFromInlineScripts` | Inline JS framework detection |
-| `TestStripWaybackPrefix` | Wayback URL prefix removal |
-| `TestExtractOriginalScriptSrcs` | Original URLs from Wayback pages |
-| `TestPickRandomUA` | User-Agent rotation |
-| `TestFetchFaviconHash` | In-process favicon hashing (httptest) |
-| `TestFetchPartialJS` | Partial JS fetch (httptest) |
-| `TestTryRequest` | HTTP client with retries (httptest) |
-| `TestFetchJSContent` | Full JS content assembly (httptest) |
-| `TestLoadTitlePatterns` | CSV title pattern loading |
-| `TestLoadFaviconHashes` | CSV favicon hash loading |
-| `TestLoadUserAgents` | User-Agent file loading |
-| `TestDetectFromCookiesConcurrency` | Concurrent cookie detection safety |
-| Regression: Title-as-tech | Page titles not injected as technologies |
-| Regression: Connection reuse | No `Connection: close` header |
-
-```bash
-go test -v ./...
-```
-
----
-
 ## Data Files
 
 Stored in `~/.config/wappscan/` (auto-downloaded from GitHub on first run):
@@ -334,19 +294,6 @@ https://www.example.com - [Apache, Bootstrap, Google Analytics, jQuery, PHP, Wor
 **JSON:**
 ```json
 {"hostname":"https://www.example.com","matches":[{"app_name":"Apache","version":"2.4.41"},{"app_name":"PHP","version":"7.4"},{"app_name":"WordPress","version":""}]}
-```
-
----
-
-## Publishing to GitHub
-
-```bash
-cd wappscan/
-git add -A
-git commit -m "Release v1.0.0"
-git push origin main
-git tag v1.0.0
-git push origin v1.0.0
 ```
 
 Users install via:
