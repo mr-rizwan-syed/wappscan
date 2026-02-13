@@ -91,8 +91,7 @@ If you need `-headless` capabilities (WAF bypass, JS rendering) on **Kali Linux 
 sudo apt update && sudo apt install -y chromium
 ```
 
-With `v1.0.6+`, wappscan will automatically disable headless mode (and warn you) if Chrome is missing, so installation is optional.
-
+wappscan will automatically disable headless mode (and warn you) if Chrome is missing, so installation is optional.
 ---
 
 ## Usage
@@ -321,6 +320,27 @@ go install github.com/mr-rizwan-syed/wappscan@latest
 | [chromedp](https://github.com/chromedp/chromedp) | Headless Chrome for JS-rendered pages |
 | [murmur3](https://github.com/spaolacci/murmur3) | Favicon hash computation |
 
+## Contribute 🤝
+
+We ❤️ contributions! Help us make Wappscan better:
+
+1.  **Add New Technologies**:
+    *   Found a new favicon hash? Add it to `favicon_hashes.csv`.
+    *   Found a unique title pattern? Add it to `title_patterns.csv`.
+    *   Submit a Pull Request!
+
+2.  **Report Bugs**: Open an issue if you find sites that are not detected correctly.
+
+3.  **Improve Detection**: Suggest new ways to detect technologies (headers, cookies, etc.).
+
+### Improvement Ideas 💡
+*   [ ] Integration with Nuclei templates for vulnerability scanning
+*   [ ] Automated technology crawling and hash generation
+*   [ ] Docker container support
+*   [ ] Community-driven signature database updates
+
+---
+
 ## License
 
-See [LICENSE](../LICENSE) file.
+MIT License. See [LICENSE](../LICENSE) file.
