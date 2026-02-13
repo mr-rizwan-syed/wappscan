@@ -45,11 +45,16 @@ const version = "1.0.1"
 
 func showBanner(noColor bool) {
 	banner := `
-   _      __
-  | | /| / /___ _ ___  ___  ___ ____ ___ _ ___ 
-  | |/ |/ // _ '// _ \/ _ \/ _-</ __// _ '// _ \
-  |__/|__/ \_,_// .__/ .__/\__/\__/ \_,_//_//_/
-               /_/  /_/                        
+                                                                                
+▄▄      ▄▄                                 ▄▄▄▄                                 
+██      ██                               ▄█▀▀▀▀█                                
+▀█▄ ██ ▄█▀  ▄█████▄  ██▄███▄   ██▄███▄   ██▄        ▄█████▄   ▄█████▄  ██▄████▄ 
+ ██ ██ ██   ▀ ▄▄▄██  ██▀  ▀██  ██▀  ▀██   ▀████▄   ██▀    ▀   ▀ ▄▄▄██  ██▀   ██ 
+ ███▀▀███  ▄██▀▀▀██  ██    ██  ██    ██       ▀██  ██        ▄██▀▀▀██  ██    ██ 
+ ███  ███  ██▄▄▄███  ███▄▄██▀  ███▄▄██▀  █▄▄▄▄▄█▀  ▀██▄▄▄▄█  ██▄▄▄███  ██    ██ 
+ ▀▀▀  ▀▀▀   ▀▀▀▀ ▀▀  ██ ▀▀▀    ██ ▀▀▀     ▀▀▀▀▀      ▀▀▀▀▀    ▀▀▀▀ ▀▀  ▀▀    ▀▀ 
+                     ██        ██                                               
+                                                                                             
 `
 	if noColor {
 		fmt.Fprint(os.Stderr, banner)
@@ -1207,12 +1212,17 @@ func main() {
                 // 5. Favicon Hash Detection (in-process, no httpx subprocess)
                 if resp != nil && favHashes != nil {
                         if hash, ok := fetchFaviconHash(targetClient, targetURL, finalUA); ok {
+                                tech, found := favHashes[hash]
                                 if verbose {
+                                        matchStr := "No Match"
+                                        if found {
+                                                matchStr = fmt.Sprintf("Matched: %s", tech)
+                                        }
                                         mu.Lock()
-                                        fmt.Fprintf(os.Stderr, "VERBOSE %s => Favicon hash: %d\n", targetURL, hash)
+                                        fmt.Fprintf(os.Stderr, "VERBOSE %s => Favicon hash: %d (%s)\n", targetURL, hash, matchStr)
                                         mu.Unlock()
                                 }
-                                if tech, found := favHashes[hash]; found {
+                                if found {
                                         techMap[tech] = struct{}{}
                                 }
                         }
