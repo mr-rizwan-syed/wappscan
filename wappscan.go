@@ -41,7 +41,7 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.1"
+const version = "1.0.4"
 
 func showBanner(noColor bool) {
 	banner := `
