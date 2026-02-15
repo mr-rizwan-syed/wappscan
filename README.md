@@ -75,7 +75,7 @@ echo "https://target.com" | httpx -td -json | jq -r '.url' | wappscan
 go install github.com/mr-rizwan-syed/wappscan@latest
 ```
 
-Data files (`favicon_hashes.csv`, `title_patterns.csv`) are **automatically downloaded** to `~/.config/wappscan/` on first run.
+Data files (`favicon-detect.yaml`, `title_patterns.csv`) are **automatically downloaded** to `~/.config/wappscan/` on first run.
 
 ### Update
 
@@ -257,7 +257,6 @@ Primary Scan Failed?
 | `-js-size` | `204800` | Max bytes per JS file |
 | `-k` | `true` | Skip TLS verification |
 | `-ua` | | Custom User-Agent |
-| `-favicon-db` | `~/.config/wappscan/...` | Favicon hash DB |
 | `-title-db` | `~/.config/wappscan/...` | Title patterns DB |
 
 ---
@@ -298,9 +297,9 @@ echo "https://staging.company.com" | wappscan -silent -json | \
 
 ## Data Files
 
-Stored in `~/.config/wappscan/` (auto-downloaded from GitHub on first run):
+Stored in `~/.config/wappscan/` (auto-downloaded on first run):
 
-- **`favicon_hashes.csv`** — Maps favicon mmh3 hashes to technology names
+- **`favicon-detect.yaml`** — Nuclei technology template for favicon mmh3 hashes
 - **`title_patterns.csv`** — Maps page title patterns to technology names
 
 ---
@@ -309,7 +308,7 @@ Stored in `~/.config/wappscan/` (auto-downloaded from GitHub on first run):
 
 **Plaintext:**
 ```
-wappscan v1.0.0 - Web Technology Fingerprinting Tool
+wappscan v1.1.0 - Web Technology Fingerprinting Tool
 
 https://www.example.com - [Apache, Bootstrap, Google Analytics, jQuery, PHP, WordPress]
 ```
@@ -339,7 +338,7 @@ go install github.com/mr-rizwan-syed/wappscan@latest
 We ❤️ contributions! Help us make Wappscan better:
 
 1.  **Add New Technologies**:
-    *   Found a new favicon hash? Add it to `favicon_hashes.csv`.
+    *   Found a new favicon? We now use Nuclei templates. Consider contributing to [projectdiscovery/nuclei-templates](https://github.com/projectdiscovery/nuclei-templates).
     *   Found a unique title pattern? Add it to `title_patterns.csv`.
     *   Submit a Pull Request!
 
