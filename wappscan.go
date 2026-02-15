@@ -41,7 +41,7 @@ const (
         CYAN   = "\033[36m"
 )
 
-const version = "1.0.9"
+const version = "1.1.0"
 
 func showBanner(noColor bool) {
 	banner := `
@@ -54,7 +54,7 @@ func showBanner(noColor bool) {
  ███  ███  ██▄▄▄███  ███▄▄██▀  ███▄▄██▀  █▄▄▄▄▄█▀  ▀██▄▄▄▄█  ██▄▄▄███  ██    ██ 
  ▀▀▀  ▀▀▀   ▀▀▀▀ ▀▀  ██ ▀▀▀    ██ ▀▀▀     ▀▀▀▀▀      ▀▀▀▀▀    ▀▀▀▀ ▀▀  ▀▀    ▀▀ 
                      ██        ██                                               
-                                                                                             
+                                                                                              
 `
 	if noColor {
 		fmt.Fprint(os.Stderr, banner)
@@ -654,40 +654,49 @@ func loadTitlePatterns(path string) (map[string]string, error) {
 }
 
 
-// loadFaviconHashes loads the CSV database of hashes.
-func loadFaviconHashes(path string) (map[int32]string, error) {
-        f, err := os.Open(path)
-        if err != nil {
-                return nil, err
-        }
-        defer f.Close()
+// loadFaviconHashesFromYAML loads the Nuclei YAML template and extracts hashes.
+// It uses regex to avoid heavy YAML dependencies.
+func loadFaviconHashesFromYAML(path string) (map[int32]string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	content := string(data)
 
-        db := make(map[int32]string)
-        reader := csv.NewReader(f)
-        
-        // skip header
-        _, _ = reader.Read()
+	// Regex to extract name: name: "product-name"
+	nameRe := regexp.MustCompile(`name:\s*"([^"]+)"`)
+	// Regex to extract hash: \"123456\" == mmh3
+	hashRe := regexp.MustCompile(`\\"(-?\d+)\\"\s*==\s*mmh3`)
 
-        for {
-                record, err := reader.Read()
-                if err == io.EOF {
-                        break
-                }
-                if err != nil {
-                        continue
-                }
-                if len(record) < 2 {
-                        continue
-                }
-                
-                h, err := strconv.ParseInt(record[0], 10, 32)
-                if err != nil {
-                        continue
-                }
-                tech := normalizeInput(record[1])
-                db[int32(h)] = tech
-        }
-        return db, nil
+	nameMatches := nameRe.FindAllStringSubmatch(content, -1)
+	hashMatches := hashRe.FindAllStringSubmatch(content, -1)
+
+	if len(nameMatches) != len(hashMatches) {
+		// This might happen if the file structure varies (e.g. multiple matchers)
+		// But based on our analysis, they are 1:1 in the current file.
+		// If they differ, we can try to match them up or just warn.
+		// For now, let's proceed with the minimum length to avoid panic.
+	}
+
+	db := make(map[int32]string)
+	count := len(nameMatches)
+	if len(hashMatches) < count {
+		count = len(hashMatches)
+	}
+
+	for i := 0; i < count; i++ {
+		name := nameMatches[i][1]
+		hashStr := hashMatches[i][1]
+		
+		h, err := strconv.ParseInt(hashStr, 10, 32)
+		if err != nil {
+			continue
+		}
+		// Nuclei templates use lowercase/hyphenated names usually.
+		// We might want to normalize or capitalize them, but raw is fine.
+		db[int32(h)] = name
+	}
+	return db, nil
 }
 
 var inlineScriptRe = regexp.MustCompile(`(?i)<script[^>]*>([\s\S]*?)</script>`)
@@ -854,7 +863,12 @@ func ensureDataFile(path, filename string, verbose bool) string {
 	}
 
 	// Download from GitHub
-	downloadURL := githubRawBase + filename
+	var downloadURL string
+	if filename == "favicon-detect.yaml" {
+		downloadURL = "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/refs/heads/main/http/technologies/favicon-detect.yaml"
+	} else {
+		downloadURL = githubRawBase + filename
+	}
 	if verbose {
 		fmt.Fprintf(os.Stderr, "INFO Downloading %s from %s...\n", filename, downloadURL)
 	}
@@ -928,12 +942,8 @@ func main() {
         flag.StringVar(&uaCustom, "ua", "", "custom User-Agent (optional)")
         flag.StringVar(&uaFile, "ua-file", "user-agents.txt", "user-agent file path (default: user-agents.txt)")
 
-        defaultFaviconDB := filepath.Join(configDir(), "favicon_hashes.csv")
         defaultTitleDB := filepath.Join(configDir(), "title_patterns.csv")
 
-        var faviconDB string
-        flag.StringVar(&faviconDB, "favicon-db", defaultFaviconDB, "path to favicon hash CSV database")
-        
         var titleDB string
         flag.StringVar(&titleDB, "title-db", defaultTitleDB, "path to title patterns CSV")
         
@@ -1043,17 +1053,18 @@ func main() {
                 }
         }
 
-        // Ensure data files exist (download from GitHub if missing)
-        faviconDB = ensureDataFile(faviconDB, "favicon_hashes.csv", verbose)
-        titleDB = ensureDataFile(titleDB, "title_patterns.csv", verbose)
+        	// Ensure data files exist (download from GitHub if missing)
+	faviconDB := filepath.Join(configDir(), "favicon-detect.yaml")
+	ensureDataFile(faviconDB, "favicon-detect.yaml", verbose)
+	titleDB = ensureDataFile(titleDB, "title_patterns.csv", verbose)
 
-        // Load favicon DB
-        var favHashes map[int32]string
-        if fh, err := loadFaviconHashes(faviconDB); err == nil {
-                favHashes = fh
-        } else if verbose {
-                fmt.Printf("Warning: could not load favicon DB %s: %v\n", faviconDB, err)
-        }
+	// Load favicon DB
+	var favHashes map[int32]string
+	if fh, err := loadFaviconHashesFromYAML(faviconDB); err == nil {
+		favHashes = fh
+	} else if verbose {
+		fmt.Printf("Warning: could not load favicon DB %s: %v\n", faviconDB, err)
+	}
 
         // Load Title Patterns
         var titlePatterns map[string]string
