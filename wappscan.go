@@ -66,56 +66,69 @@ func showBanner(noColor bool) {
 		BOLD, version, RESET, YELLOW, RESET)
 }
 func selfUpdate() error {
-        goos := runtime.GOOS
-        goarch := runtime.GOARCH
+        fmt.Fprintf(os.Stderr, "[*] Updating wappscan via go install...\n")
 
-        downloadURL := fmt.Sprintf(
-                "https://github.com/mr-rizwan-syed/wappscan/releases/latest/download/wappscan_%s_%s",
-                goos, goarch)
-
-        fmt.Fprintf(os.Stderr, "[*] Updating wappscan from %s\n", downloadURL)
-
-        resp, err := http.Get(downloadURL)
-        if err != nil {
-                return fmt.Errorf("download failed: %w", err)
+        cmd := exec.Command("go", "install", "github.com/mr-rizwan-syed/wappscan@latest")
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+        if err := cmd.Run(); err != nil {
+                return fmt.Errorf("go install failed: %w", err)
         }
-        defer resp.Body.Close()
 
-        if resp.StatusCode != 200 {
-                // Fallback: try go install
-                fmt.Fprintf(os.Stderr, "[*] Binary not found, trying go install...\n")
-                cmd := exec.Command("go", "install", "github.com/mr-rizwan-syed/wappscan@latest")
-                cmd.Stdout = os.Stdout
-                cmd.Stderr = os.Stderr
-                if err := cmd.Run(); err != nil {
-                        return fmt.Errorf("go install failed: %w", err)
+        // Find the installed binary in GOPATH/bin or GOBIN
+        gobin := os.Getenv("GOBIN")
+        if gobin == "" {
+                gopath := os.Getenv("GOPATH")
+                if gopath == "" {
+                        home, _ := os.UserHomeDir()
+                        gopath = filepath.Join(home, "go")
                 }
-                fmt.Fprintf(os.Stderr, "[+] Updated successfully via go install\n")
+                gobin = filepath.Join(gopath, "bin")
+        }
+        installedPath := filepath.Join(gobin, "wappscan")
+
+        // Determine where the currently running binary lives
+        exePath, err := os.Executable()
+        if err != nil {
+                fmt.Fprintf(os.Stderr, "[+] Updated in %s (could not detect current binary path)\n", installedPath)
+                return nil
+        }
+        exePath, _ = filepath.EvalSymlinks(exePath)
+
+        // If go install already put it in the right place, we're done
+        if installedPath == exePath {
+                fmt.Fprintf(os.Stderr, "[+] Updated successfully to latest version\n")
                 return nil
         }
 
-        exePath, err := os.Executable()
+        // Copy the new binary over the current one
+        srcFile, err := os.Open(installedPath)
         if err != nil {
-                return fmt.Errorf("cannot find executable path: %w", err)
+                fmt.Fprintf(os.Stderr, "[+] Updated in %s (copy to %s skipped: %v)\n", installedPath, exePath, err)
+                return nil
         }
+        defer srcFile.Close()
 
         tmpFile := exePath + ".tmp"
         out, err := os.Create(tmpFile)
         if err != nil {
-                return fmt.Errorf("cannot create temp file: %w", err)
+                fmt.Fprintf(os.Stderr, "[+] Updated in %s (copy to %s skipped: %v)\n", installedPath, exePath, err)
+                return nil
         }
 
-        _, err = io.Copy(out, resp.Body)
+        _, err = io.Copy(out, srcFile)
         out.Close()
         if err != nil {
                 os.Remove(tmpFile)
-                return fmt.Errorf("download incomplete: %w", err)
+                fmt.Fprintf(os.Stderr, "[+] Updated in %s (copy to %s skipped: %v)\n", installedPath, exePath, err)
+                return nil
         }
 
         os.Chmod(tmpFile, 0755)
         if err := os.Rename(tmpFile, exePath); err != nil {
                 os.Remove(tmpFile)
-                return fmt.Errorf("cannot replace binary: %w", err)
+                fmt.Fprintf(os.Stderr, "[+] Updated in %s (replace %s failed: %v)\n", installedPath, exePath, err)
+                return nil
         }
 
         fmt.Fprintf(os.Stderr, "[+] Updated successfully to latest version\n")
