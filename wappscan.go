@@ -576,7 +576,19 @@ func fetchFaviconHash(client *http.Client, targetURL, userAgent string) (int32, 
         }
 
         encoded := base64.StdEncoding.EncodeToString(data)
-        h := murmur3.Sum32([]byte(encoded))
+        // Python's base64.encodebytes() inserts \n every 76 chars and at the end.
+        // Nuclei's base64_py() does the same. We must match this format for
+        // the mmh3 hash to agree with hashes in favicon-detect.yaml.
+        var pyEncoded strings.Builder
+        for i := 0; i < len(encoded); i += 76 {
+                end := i + 76
+                if end > len(encoded) {
+                        end = len(encoded)
+                }
+                pyEncoded.WriteString(encoded[i:end])
+                pyEncoded.WriteByte('\n')
+        }
+        h := murmur3.Sum32([]byte(pyEncoded.String()))
         return int32(h), true
 }
 
